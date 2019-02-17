@@ -1,0 +1,63 @@
+static const String header  = "<!DOCTYPE html><html><head><title>Reflow Control Panel</title><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
+                              "<link rel=\"shortcut icon\" href=\"https://www.jrodrigo.net/wp-content/uploads/2017/11/jrodrigo-logo-1.ico\">"                              
+							  "<style>"
+                              "*{box-sizing: border-box;}"
+                              ".menu {"
+                              "float: left;"
+                              "width: 20%;}"
+                              ".menuitem{"
+                              "padding: 8px;"
+                              "margin-top: 7px;"
+                              "border-bottom: 1px solid #f1f1f1;}"
+                              ".main{"
+                              "float: left;"
+                              "width: 55%;"
+                              "padding: 0 20px;"
+                              "overflow: hidden;}"
+                              ".right{"
+                              "background-color: lightblue;"
+                              "float: left;"
+                              "width: 25%;"
+                              "padding: 10px 15px;"
+                              "margin-top: 7px;}"
+							  "graph{"
+              				  "margin: 10px auto;"
+              				  "border-style: solid;"
+              				  "border-width: 1px;"
+              				  "width: 650px;"
+              				  "height: 400px;}"
+                              "@media only screen and (max-width:800px) {"
+                              ".main {"
+                              "width: 80%;"
+                              "padding: 0;}"
+                              ".right{"
+                              "width: 100%;"
+                              "}}"
+                              "@media only screen and (max-width:500px) {"
+                              ".menu, .main, .right {"
+                              "width: 100%;}}"
+                              "</style></head><body style=\"font-family:Verdana;\">";
+
+static const String title = "<div style=\"background-color:#f1f1f1;padding:15px;\"><h2>Reflow Control Panel</h2></div>";
+
+static const String menu  = "<div style=\"overflow:auto\"><div class=\"menu\">"
+                            "<div class=\"menuitem\">Profile 1 : Leaded</div>"
+                            "<div class=\"menuitem\">Profile 2 : LeadFree</div>"
+                            "<div class=\"menuitem\">Profile 3 : Desiccant</div>"
+                            "<div class=\"menuitem\">Settings</div></div>";
+
+static const String main  = "<div class=\"main\">"
+                            "<h3>Profile 2 : LeadFree</h3>"
+                            "<p><canvas id=\"graph\"></canvas></p></div>";
+
+static const String right = "<div class=\"right\">"
+                            "<h4>Current Temp.</h4>"
+                            "<p id=\"temp\">00,0 &deg;C</p>"
+                            "<h4>Profile Settings</h4>"
+                            "<p>List of Settings...</p>"
+                            "<h3>Start Reflow</h3></div></div>";
+
+static const String bottom = "<div style=\"background-color:#f1f1f1;text-align:center;padding:10px;margin-top:7px;font-size:12px;\"> WiFi Reflow Controller - ESP32 - Version 0.0.1a - GitHub</div>"
+                             "<script src=\"data:text/javascript;base64,dmFyIGdyYXBoID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2dyYXBoJyksCgkJY29udGV4dCA9IGdyYXBoLmdldENvbnRleHQoJzJkJyksCgkJd2lkdGggPSBncmFwaC53aWR0aCA9IDY1MCwKCQloZWlnaHQgPSBncmFwaC5oZWlnaHQgPSA0MDA7Cgp2YXIgc3RhdHMgPSBbNDAsIDY1LCA3MiwgMTIwLCAxNTAsIDE3NSwgMjAwLCAxMDAsNTAsMjAsMTAsNV07Cgpjb250ZXh0LnRyYW5zbGF0ZSgwLCBoZWlnaHQpOwpjb250ZXh0LnNjYWxlKDEsIC0xKTsKCmNvbnRleHQuZmlsbFN0eWxlID0gJyNmNmY2ZjYnOwpjb250ZXh0LmZpbGxSZWN0KDAsIDAsIHdpZHRoLCBoZWlnaHQpOwoKdmFyIGxlZnQgPSAwLAoJCXByZXZfc3RhdCA9IHN0YXRzWzBdLAoJCW1vdmVfbGVmdF9ieSA9IDUwOwoKZm9yKHN0YXQgaW4gc3RhdHMpIHsKCXRoZV9zdGF0ID0gc3RhdHNbc3RhdF07CgoJY29udGV4dC5iZWdpblBhdGgoKTsKCWNvbnRleHQubW92ZVRvKGxlZnQsIHByZXZfc3RhdCk7Cgljb250ZXh0LmxpbmVUbyhsZWZ0K21vdmVfbGVmdF9ieSwgdGhlX3N0YXQpOwoJY29udGV4dC5saW5lV2lkdGggPSAyOwoJY29udGV4dC5saW5lQ2FwID0gJ3JvdW5kJzsKLyoKCWlmKHRoZV9zdGF0IDwgc3RhdHNbc3RhdC0xXSkgewoJCWNvbnRleHQuc3Ryb2tlU3R5bGUgPSAnI2MwMzkyYic7Cgl9IGVsc2UgewoJCWNvbnRleHQuc3Ryb2tlU3R5bGUgPSAnIzNiM2IzYic7Cgl9CgkqLwoJY29udGV4dC5zdHJva2UoKTsKCglwcmV2X3N0YXQgPSB0aGVfc3RhdDsKCWxlZnQgKz0gbW92ZV9sZWZ0X2J5OwoKfQ==\"></script>"
+                             "<script src=\"data:text/javascript;base64,dmFyIG15VmFyID0gc2V0SW50ZXJ2YWwoZnVuY3Rpb24oKSB7CiAgdGVtcGVyYXR1cmVfdXBkYXRlKCk7Cn0sIDI1MDApOwoKZnVuY3Rpb24gdGVtcGVyYXR1cmVfdXBkYXRlKCkgewogIHZhciB4aHR0cCA9IG5ldyBYTUxIdHRwUmVxdWVzdCgpOwogIHhodHRwLm9ucmVhZHlzdGF0ZWNoYW5nZSA9IGZ1bmN0aW9uKCkgewogICAgaWYgKHRoaXMucmVhZHlTdGF0ZSA9PSA0ICYmIHRoaXMuc3RhdHVzID09IDIwMCkgewogICAgICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgidGVtcCIpLmlubmVySFRNTCA9CiAgICAgIHRoaXMucmVzcG9uc2VUZXh0ICsgIiAmZGVnO0MiOwogICAgfQogIH07CiAgeGh0dHAub3BlbigiR0VUIiwgIi90ZW1wMSIsIHRydWUpOwogIHhodHRwLnNlbmQoKTsKfQ==\"></script>"
+                             "</body></html>";
