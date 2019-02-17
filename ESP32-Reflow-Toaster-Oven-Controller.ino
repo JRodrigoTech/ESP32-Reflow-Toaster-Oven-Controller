@@ -16,7 +16,7 @@ int           time_out = 0 ;
 
 // Server Settings //
 const byte    DNS_PORT = 53;          // Capture DNS requests on port 53
-IPAddress     apIP(10, 10, 10, 10);    // Private network for server in AP MODE
+IPAddress     apIP(192, 168, 4, 1);    // Private network for server in AP MODE
 DNSServer     dnsServer;              // Create the DNS object
 WebServer     webServer(80);          // HTTP server
 boolean       AP_MODE = false;
@@ -100,6 +100,24 @@ void setup() {
    webServer.on("/ok", []() {
     webServer.send(204);
   });*/
+
+  // Path Arguments from URL
+  webServer.on("/wifi/{}/{}", []() {
+    String user = webServer.pathArg(0);
+    String device = webServer.pathArg(1);
+    webServer.send(200, "text/plain", "User: '" + user + "' and Device: '" + device + "'");
+  });
+
+  // Set profile
+  webServer.on("/set/{}", []() {
+    String user = webServer.pathArg(0);
+    webServer.sendHeader("Location", "/");
+    webServer.send(302);
+  });
+
+
+
+  
 
   // replay to all requests with same HTML
   webServer.onNotFound([]() {
