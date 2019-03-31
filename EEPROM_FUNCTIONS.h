@@ -1,30 +1,33 @@
-//  MAX EEPROM 512 BYTES
-//  NAMES
-//  32  SSID
+//  EEPROM 512 BYTES
+//  ------------------------------
+//  32  SSID          { NAMES }
 //  32  PASSWORD
 //  32  Profile 1
 //  32  Profile 2
 //  32  Profile 3
 //  32  Profile 4
-//   ------- > 192 bytes for names
-//  64 bytes for params
-//  -------- > 256 bytes
-//  2 bytes actual profile
+//  + ------ > 192 bytes for names
+//  128 bytes for 4 Byte params[]
+//  + ------ > 320 bytes
+//  4 bytes actual profile
 
-// WiFi Settings//
+// WiFi Settings
 char ssid[32];
 char password[32];
 
-// NAMES
+// Profile Names
 char profile1[32];
 char profile2[32];
 char profile3[32];
 char profile4[32];
-// Parametros 8 por perfil (4 temp 4 time)
+
+// 4 Profiles * ( 4 Temps ; 4 Time )
 int profile_param[32];
 
+// Current Selected Profile
 int current_profile;
 
+// Load all EEPROM data
 void loadEEPROMdata() {
   EEPROM.begin(512);
   // NAMES
@@ -42,17 +45,7 @@ void loadEEPROMdata() {
   EEPROM.end();
 }
 
-void savedata() {
-  EEPROM.begin(512);
-  EEPROM.put(0, ssid);
-  EEPROM.put(0+sizeof(ssid), password);
-  char ok[2+1] = "OK";
-  EEPROM.put(0+sizeof(ssid)+sizeof(password), ok);
-  EEPROM.commit();
-  EEPROM.end();
-}
-
-
+// Save Wi-Fi Credentials
 void savewifi() {
   EEPROM.begin(512);
   EEPROM.put(0, ssid);
@@ -61,6 +54,7 @@ void savewifi() {
   EEPROM.end();
 }
 
+// Save Profile Settings
 void saveprofile(int num){
   EEPROM.begin(512);
   switch (num) {
@@ -77,20 +71,18 @@ void saveprofile(int num){
       EEPROM.put(160, profile4);
       break;
   }
-
   // Profile Params
   for (int i = (0 + 8*(num-1) ) ; i < 8*num ; i = i + 1) {
    EEPROM.put(192+(i*4), profile_param[i]); 
   }
-
   EEPROM.commit();
   EEPROM.end();
 }
 
+// Save Current Selected Profile
 void savecurrentprofile(int num){
   EEPROM.begin(512);
   EEPROM.put(400, num);
   EEPROM.commit();
   EEPROM.end();
 }
-
