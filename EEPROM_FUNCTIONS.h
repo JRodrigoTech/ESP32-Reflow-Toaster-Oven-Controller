@@ -36,9 +36,9 @@ void loadEEPROMdata() {
   EEPROM.get(160, profile4); 
   // Profile Params
   for (int i = 0; i < 32; i = i + 1) {
-   EEPROM.get(192+(i*2), profile_param[i]); 
+   EEPROM.get(192+(i*4), profile_param[i]); 
   }
-  EEPROM.get(256, current_profile);
+  EEPROM.get(400, current_profile);
   EEPROM.end();
 }
 
@@ -80,12 +80,17 @@ void saveprofile(int num){
 
   // Profile Params
   for (int i = (0 + 8*(num-1) ) ; i < 8*num ; i = i + 1) {
-   EEPROM.put(192+(i*2), profile_param[i]); 
+   EEPROM.put(192+(i*4), profile_param[i]); 
   }
 
   EEPROM.commit();
   EEPROM.end();
 }
 
-
+void savecurrentprofile(int num){
+  EEPROM.begin(512);
+  EEPROM.put(400, num);
+  EEPROM.commit();
+  EEPROM.end();
+}
 

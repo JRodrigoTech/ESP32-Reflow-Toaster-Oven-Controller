@@ -3,15 +3,25 @@
 #include <DNSServer.h>
 #include <WebServer.h>
 #include <EEPROM.h>
+#include <esp_task_wdt.h>
 #include "max6675.h"
 #include "EEPROM_FUNCTIONS.h"
 #include "html.h"
 
 //int LED_BUILTIN = 14;
 
+TaskHandle_t Tloop0;
+
+
 // Time Out for AP MODE
 const int     conn_time_out = 10000 ;     // in ms
 int           time_out = 0 ;
+
+// Temperature controller
+unsigned long flagMillis;
+unsigned long currentMillis;
+const unsigned long period = 1000;  //the value is a number of milliseconds
+
 
 // Server Settings //
 const byte    DNS_PORT = 53;          // Capture DNS requests on port 53
@@ -19,7 +29,6 @@ IPAddress     apIP(192, 168, 4, 1);    // Private network for server in AP MODE
 DNSServer     dnsServer;              // Create the DNS object
 WebServer     webServer(80);          // HTTP server
 boolean       AP_MODE = false;
-
 
 // MAX6675
 const int   thermoDO = 19;
@@ -37,6 +46,16 @@ String thermocouple_temp() {
 
 
 void setup() {
+  
+  Serial.begin(115200);
+
+  Serial.print("setup() running on core ");
+  Serial.println(xPortGetCoreID());
+  
+  // turn the LED on (HIGH is the voltage level)
+  pinMode(17, OUTPUT);
+  digitalWrite(17, LOW);
+  
   // turn the LED on (HIGH is the voltage level)
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
@@ -72,7 +91,8 @@ void setup() {
     // configure access point
     WiFi.mode(WIFI_AP);
     WiFi.softAPConfig(apIP, apIP, IPAddress(255, 255, 255, 0));
-    WiFi.softAP("Free WiFi"); // WiFi name
+    WiFi.softAP("Reflow Controller"); // Sin password
+    //WiFi.softAP("Reflow Controller", "1234");   //  Con password
     
     // if DNSServer is started with "*" for domain name, it will reply with
     // provided IP to all DNS request
@@ -95,6 +115,14 @@ void setup() {
   webServer.on("/temp1", []() {
     webServer.send(200, "text/plain", thermocouple_temp() );
   });
+
+  webServer.on("/reflowdata.js", []() {
+    webServer.send(200, "text/plain", profiledata(current_profile) );
+  });
+
+
+
+  
 /*
   webServer.on("/style.css", []() {
     webServer.send(200, "text/css", css );
@@ -121,7 +149,9 @@ void setup() {
 
   // Set profile
   webServer.on("/set/{}", []() {
-    String user = webServer.pathArg(0);
+    String Argument = webServer.pathArg(0);
+    current_profile = Argument.toInt();
+    savecurrentprofile(current_profile);
     webServer.sendHeader("Location", "/");
     webServer.send(302);
   });
@@ -138,6 +168,26 @@ void setup() {
                                                 +bottom+webend );
   });
 
+  // Perfil 2
+  webServer.on("/settings/profile/2", []() {
+    webServer.send(200, "text/html", header+title+settingsmenu+setprojava+
+                                          profileset(2,profile2,profile_param[8],profile_param[9],profile_param[10],profile_param[11],profile_param[12],profile_param[13],profile_param[14],profile_param[15])
+                                                +bottom+webend );
+  });
+
+  // Perfil 3
+  webServer.on("/settings/profile/3", []() {
+    webServer.send(200, "text/html", header+title+settingsmenu+setprojava+
+                                          profileset(3,profile3,profile_param[16],profile_param[17],profile_param[18],profile_param[19],profile_param[20],profile_param[21],profile_param[22],profile_param[23])
+                                                +bottom+webend );
+  });
+
+  // Perfil 4
+  webServer.on("/settings/profile/4", []() {
+    webServer.send(200, "text/html", header+title+settingsmenu+setprojava+
+                                          profileset(4,profile4,profile_param[24],profile_param[25],profile_param[26],profile_param[27],profile_param[28],profile_param[29],profile_param[30],profile_param[31])
+                                                +bottom+webend );
+  });
 
 /*
   webServer.on("/settings/profile/{}", []() {
@@ -175,6 +225,8 @@ void setup() {
     int pts = Argument.toInt();
 
     Argument = webServer.pathArg(1);
+
+    Argument.replace("%20", " "); // Space
     
     switch (pts) {
       case 1:
@@ -238,15 +290,49 @@ void setup() {
  
   // replay to all requests with same HTML
   webServer.onNotFound([]() {
-    webServer.send(200, "text/html", header+title+menu(current_profile,profile1,profile2,profile3,profile4)+main+bottom+mainscripts+webend );
+    webServer.send(200, "text/html", header+title+menu(current_profile,profile1,profile2,profile3,profile4)+mainhome(current_profile,profile1,profile2,profile3,profile4)+bottom+mainscripts+webend );
   });
   
   webServer.begin();
+
+  flagMillis = millis();  //initial start time
+
+  xTaskCreatePinnedToCore(loop0,"loop0",10000,NULL,1,&Tloop0,0);    /* pin task to core 0 */                    
+  
 }
 
-void loop() {
+
+
+void loop() {     // CORE 1
+
+  // Web Server
   if(AP_MODE == true){dnsServer.processNextRequest();}
   webServer.handleClient();
 
+}
+
+
+
+void loop0( void * pvParameters ){        // CORE 0
+  Serial.print("loop0 running on core ");
+  Serial.println(xPortGetCoreID());
+  
+ while(1) {
+      // Oven Controller
+      currentMillis = millis();  
+      if (currentMillis - flagMillis >= period)  
+      {
+        digitalWrite(17, !digitalRead(17)); 
+        flagMillis = currentMillis; 
+      }
+
+
+       vTaskDelay(10);    // Wacht
+    }
+
+
+
 
 }
+
+

@@ -51,22 +51,22 @@ String menu(int profilenum,char pro1[32],char pro2[32],char pro3[32], char pro4[
 
     
     String menu  = "<div style=\"overflow:auto\"><div class=\"menu\">"
-                    "<div class=\"menuitem\">Current Profile <select><option value=\"1\"";
+                    "<div class=\"menuitem\">Current Profile <select onchange=\"javascript:location.href = this.value;\"><option value=\"/set/1\"";
                     
                     if(profilenum == 1){ menu += " selected"; }
                     
-          menu  += ">1 : "+ String(pro1)+"</option><option value=\"2\"";
+          menu  += ">1 : "+ String(pro1)+"</option><option value=\"/set/2\"";
           
                     if(profilenum == 2){ menu += " selected"; }
           
           
-          menu  += ">2 : "+ String(pro2)+"</option><option value=\"3\"";
+          menu  += ">2 : "+ String(pro2)+"</option><option value=\"/set/3\"";
 
                     if(profilenum == 3){ menu += " selected"; }
 
-          menu  += ">3 : "+ String(pro3)+"</option><option value=\"4\"";
+          menu  += ">3 : "+ String(pro3)+"</option><option value=\"/set/4\"";
 
-                    if(profilenum == 3){ menu += " selected"; }
+                    if(profilenum == 4){ menu += " selected"; }
 
           menu  += ">4 : "+ String(pro4)+"</option>"        
 
@@ -82,14 +82,35 @@ String menu(int profilenum,char pro1[32],char pro2[32],char pro3[32], char pro4[
     
 }
 
-                            
-static const String main  = "<div class=\"main\">"
-                            "<h3>Profile 2 : LeadFree</h3>"
-                            "<p><canvas id=\"graph\"></canvas></p></div></div>";
+String mainhome(int profilenum,char pro1[32],char pro2[32],char pro3[32], char pro4[32]){
+
+  String mainhome  = "<div class=\"main\"><h3>Profile ";
+
+                         switch (profilenum) {
+                            case 1:
+                              mainhome += "1 : "+String(pro1);
+                              break;
+                            case 2:
+                              mainhome += "2 : "+String(pro2);
+                              break;
+                            case 3:
+                              mainhome += "3 : "+String(pro3);
+                              break;
+                            case 4:
+                              mainhome += "4 : "+String(pro4);
+                              break;
+                        }
+                               
+                      mainhome += "</h3><p><canvas id=\"graph\"></canvas></p></div></div>";
+
+  return mainhome;
+
+}
 
 static const String bottom = "<div style=\"background-color:#f1f1f1;text-align:center;padding:10px;margin-top:7px;font-size:12px;\"> WiFi Reflow Controller - ESP32 - Version 0.0.1a - <a href=\"https://github.com/JRodrigoTech/ESP32-Reflow-Toaster-Oven-Controller\"  target=\"_blank\">GitHub</a></div>";
 
-static const String mainscripts = "<script src=\"data:text/javascript;base64,dmFyIGdyYXBoID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2dyYXBoJyksCgkJY29udGV4dCA9IGdyYXBoLmdldENvbnRleHQoJzJkJyksCgkJd2lkdGggPSBncmFwaC53aWR0aCA9IDY1MCwKCQloZWlnaHQgPSBncmFwaC5oZWlnaHQgPSA0MDA7Cgp2YXIgc3RhdHMgPSBbNDAsIDY1LCA3MiwgMTIwLCAxNTAsIDE3NSwgMjAwLCAxMDAsNTAsMjAsMTAsNV07Cgpjb250ZXh0LnRyYW5zbGF0ZSgwLCBoZWlnaHQpOwpjb250ZXh0LnNjYWxlKDEsIC0xKTsKCmNvbnRleHQuZmlsbFN0eWxlID0gJyNmNmY2ZjYnOwpjb250ZXh0LmZpbGxSZWN0KDAsIDAsIHdpZHRoLCBoZWlnaHQpOwoKdmFyIGxlZnQgPSAwLAoJCXByZXZfc3RhdCA9IHN0YXRzWzBdLAoJCW1vdmVfbGVmdF9ieSA9IDUwOwoKZm9yKHN0YXQgaW4gc3RhdHMpIHsKCXRoZV9zdGF0ID0gc3RhdHNbc3RhdF07CgoJY29udGV4dC5iZWdpblBhdGgoKTsKCWNvbnRleHQubW92ZVRvKGxlZnQsIHByZXZfc3RhdCk7Cgljb250ZXh0LmxpbmVUbyhsZWZ0K21vdmVfbGVmdF9ieSwgdGhlX3N0YXQpOwoJY29udGV4dC5saW5lV2lkdGggPSAyOwoJY29udGV4dC5saW5lQ2FwID0gJ3JvdW5kJzsKLyoKCWlmKHRoZV9zdGF0IDwgc3RhdHNbc3RhdC0xXSkgewoJCWNvbnRleHQuc3Ryb2tlU3R5bGUgPSAnI2MwMzkyYic7Cgl9IGVsc2UgewoJCWNvbnRleHQuc3Ryb2tlU3R5bGUgPSAnIzNiM2IzYic7Cgl9CgkqLwoJY29udGV4dC5zdHJva2UoKTsKCglwcmV2X3N0YXQgPSB0aGVfc3RhdDsKCWxlZnQgKz0gbW92ZV9sZWZ0X2J5OwoKfQ==\"></script>"
+static const String mainscripts = "<script src=\"reflowdata.js\"></script>"
+                             "<script src=\"data:text/javascript;base64,dmFyIGdyYXBoID0gZG9jdW1lbnQuZ2V0RWxlbWVudEJ5SWQoJ2dyYXBoJyksCgljb250ZXh0ID0gZ3JhcGguZ2V0Q29udGV4dCgnMmQnKSwKCXdpZHRoID0gZ3JhcGgud2lkdGggPSA2NTAsCgloZWlnaHQgPSBncmFwaC5oZWlnaHQgPSA0MDA7Cgpjb250ZXh0LnRyYW5zbGF0ZSgwLCBoZWlnaHQpOwpjb250ZXh0LnNjYWxlKDEsIC0xKTsKCmNvbnRleHQuZmlsbFN0eWxlID0gJyNmNmY2ZjYnOwpjb250ZXh0LmZpbGxSZWN0KDAsIDAsIHdpZHRoLCBoZWlnaHQpOwoKdmFyIHByZXZfc3RhdCA9IHRlbXBzWzBdLAoJcHJldl9sZWZ0ID0gdGltZXNbMF07Cgpmb3Ioc3RhdCBpbiB0ZW1wcykgewoJdGhlX3N0YXQgPSB0ZW1wc1tzdGF0XTsKCXRoZV90aW1lID0gdGltZXNbc3RhdF0KCgljb250ZXh0LmJlZ2luUGF0aCgpOwoJY29udGV4dC5tb3ZlVG8ocHJldl9sZWZ0LCBwcmV2X3N0YXQpOwoJY29udGV4dC5saW5lVG8odGhlX3RpbWUsIHRoZV9zdGF0KTsKCWNvbnRleHQubGluZVdpZHRoID0gMjsKCWNvbnRleHQubGluZUNhcCA9ICdyb3VuZCc7Ci8qCglpZih0aGVfc3RhdCA8IHRlbXBzW3N0YXQtMV0pIHsKCQljb250ZXh0LnN0cm9rZVN0eWxlID0gJyNjMDM5MmInOwoJfSBlbHNlIHsKCQljb250ZXh0LnN0cm9rZVN0eWxlID0gJyMzYjNiM2InOwoJfQoJKi8KCWNvbnRleHQuc3Ryb2tlKCk7CgoJcHJldl9zdGF0ID0gdGhlX3N0YXQ7CglwcmV2X2xlZnQgPSB0aGVfdGltZTsKfQ==\"></script>"
                              "<script src=\"data:text/javascript;base64,dmFyIG15VmFyID0gc2V0SW50ZXJ2YWwoZnVuY3Rpb24oKSB7CiAgdGVtcGVyYXR1cmVfdXBkYXRlKCk7Cn0sIDI1MDApOwoKZnVuY3Rpb24gdGVtcGVyYXR1cmVfdXBkYXRlKCkgewogIHZhciB4aHR0cCA9IG5ldyBYTUxIdHRwUmVxdWVzdCgpOwogIHhodHRwLm9ucmVhZHlzdGF0ZWNoYW5nZSA9IGZ1bmN0aW9uKCkgewogICAgaWYgKHRoaXMucmVhZHlTdGF0ZSA9PSA0ICYmIHRoaXMuc3RhdHVzID09IDIwMCkgewogICAgICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZCgidGVtcCIpLmlubmVySFRNTCA9CiAgICAgIHRoaXMucmVzcG9uc2VUZXh0ICsgIiAmZGVnO0MiOwogICAgfQogIH07CiAgeGh0dHAub3BlbigiR0VUIiwgIi90ZW1wMSIsIHRydWUpOwogIHhodHRwLnNlbmQoKTsKfQ==\"></script>";
                              
 static const String webend = "</body></html>";
@@ -125,7 +146,7 @@ static const String setprojava = "<script src=\"data:text/javascript;base64,ZnVu
 String profileset(int profilenum,char profnam[32],int itemp1,int itemp2,int itemp3,int itemp4,int itime1,int itime2,int itime3,int itime4){
 
     String printhtml = "<div class=\"main\"><h3>Profile " +String(profilenum)+ " Configuration</h3>"
-                       "<div>Profile Name <input type=\"text\" id=\"name\" value=\"" +String(profnam)+ "\"><br>"
+                       "<div>Profile Name <input type=\"text\" id=\"name\" value=\"" +String(profnam)+ "\" maxlength=\"32\"><br>"
                        "<input type=\"hidden\" id=\"profilenum\" value=\"" +String(profilenum)+ "\">"
                        "Temperatures:<br>"
 
@@ -149,5 +170,14 @@ String profileset(int profilenum,char profnam[32],int itemp1,int itemp2,int item
 }
 
 
+String profiledata(int profilenum){
+    int ofs = 8*(profilenum-1);
+    
+    String printjava = "var temps = [25,"+String(profile_param[0+ofs])+","+String(profile_param[1+ofs])+","+String(profile_param[2+ofs])+","+String(profile_param[3+ofs])+"];"
+                       "var times = [0,"+String(profile_param[4+ofs]*2)+","+String(profile_param[5+ofs]*2)+","+String(profile_param[6+ofs]*2)+","+String(profile_param[7+ofs]*2)+"];";
+    
+    return printjava;
+    
+}
 
 
