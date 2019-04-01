@@ -23,7 +23,7 @@ unsigned long flagMillis;
 unsigned long currentMillis;
 const unsigned long period = 1000;  // in ms (delete)
 const unsigned long rflw_period = 500;  // in ms
-
+unsigned long plot_flag;  // in ms
 
 // Server Settings //
 const byte    DNS_PORT = 53;          // Capture DNS requests on port 53
@@ -107,17 +107,17 @@ void setup() {
   webServer.on("/", []() {
     webServer.send(200, "text/plain", "Hello World");
   });
-*/
+*/  
+  // Reflow Temperatures Array Data
+  webServer.on("/reflowdata", []() {    
+    webServer.send(200, "text/plain", profileplotprint() );
+  });
+
   // Thermocouple Plain Read
-  webServer.on("/temp1", []() {
+  webServer.on("/temp", []() {
     webServer.send(200, "text/plain", thermocouple_temp() );
   });
   
-  // Reflow Temperatures Array Data
-  webServer.on("/reflowdata.js", []() {
-    webServer.send(200, "text/plain", profiledata(current_profile) );
-  });
-
   // Settings - Wi-Fi
   webServer.on("/settings/wifi", []() {
     webServer.send(200, "text/html", header+title+settingsmenu+wifisettings1+String(ssid)+wifisettings2+String(password)+wifisettings3+bottom+webend);
@@ -125,22 +125,22 @@ void setup() {
 
   // Settings - Profile 1
   webServer.on("/settings/profile/1", []() {
-    webServer.send(200, "text/html", header+title+settingsmenu+setprojava+profileset(1,profile1,profile_param[0],profile_param[1],profile_param[2],profile_param[3],profile_param[4],profile_param[5],profile_param[6],profile_param[7])+bottom+webend );
+    webServer.send(200, "text/html", header+title+settingsmenu+setprojava+profileset(1)+bottom+webend );
   });
 
   // Settings - Profile 2
   webServer.on("/settings/profile/2", []() {
-    webServer.send(200, "text/html", header+title+settingsmenu+setprojava+profileset(2,profile2,profile_param[8],profile_param[9],profile_param[10],profile_param[11],profile_param[12],profile_param[13],profile_param[14],profile_param[15])+bottom+webend );
+    webServer.send(200, "text/html", header+title+settingsmenu+setprojava+profileset(2)+bottom+webend );
   });
 
   // Settings - Profile 3
   webServer.on("/settings/profile/3", []() {
-    webServer.send(200, "text/html", header+title+settingsmenu+setprojava+profileset(3,profile3,profile_param[16],profile_param[17],profile_param[18],profile_param[19],profile_param[20],profile_param[21],profile_param[22],profile_param[23])+bottom+webend );
+    webServer.send(200, "text/html", header+title+settingsmenu+setprojava+profileset(3)+bottom+webend );
   });
 
   // Settings - Profile 4
   webServer.on("/settings/profile/4", []() {
-    webServer.send(200, "text/html", header+title+settingsmenu+setprojava+profileset(4,profile4,profile_param[24],profile_param[25],profile_param[26],profile_param[27],profile_param[28],profile_param[29],profile_param[30],profile_param[31])+bottom+webend );
+    webServer.send(200, "text/html", header+title+settingsmenu+setprojava+profileset(4)+bottom+webend );
   });
 
   // Wi-Fi save config. with path arguments from URL
@@ -228,13 +228,17 @@ void setup() {
 
   // Reboot the board
   webServer.on("/reboot", []() {
-    webServer.send(200, "text/plain", "Restarting... please wait...<a style=\"color: teal;\" href=\"/\">Home Page</a>"+jsreboot );
+    webServer.send(200, "text/html", "Restarting... please wait... <a style=\"color: teal;\" href=\"/\">Home Page</a>"+jsreboot );
     ESP.restart();
   });
- 
+
   // Replay to all not defined requests with same home HTML file
   webServer.onNotFound([]() {
-    webServer.send(200, "text/html", header+title+menu(current_profile,profile1,profile2,profile3,profile4)+mainhome(current_profile,profile1,profile2,profile3,profile4)+bottom+mainscripts+webend );
+    if(AP_MODE == true){
+    webServer.send(200, "text/html", header+title+menu(apIP[0],apIP[1],apIP[2],apIP[3])+mainhome()+bottom+profiledata(current_profile)+mainscripts+webend );  
+    } else {
+    webServer.send(200, "text/html", header+title+menu(WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3])+mainhome()+bottom+profiledata(current_profile)+mainscripts+webend );
+    }
   });
   
   webServer.begin();      // Starts the previous defined Web Server Sockets
@@ -267,6 +271,15 @@ void loop0( void * pvParameters ){
       {
         digitalWrite(17, !digitalRead(17)); 
         flagMillis = currentMillis; 
+      }
+
+
+      if ((currentMillis - plot_flag >= 5000)&& (plotleg < 138))  
+      {
+        plotdata[2*plotleg] = thermocouple.readCelsius();
+        plotdata[2*plotleg+1] = plotleg*2;
+        plotleg=plotleg+1;
+        plot_flag = currentMillis; 
       }
 
 
