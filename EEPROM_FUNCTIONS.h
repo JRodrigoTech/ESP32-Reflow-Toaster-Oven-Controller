@@ -86,3 +86,74 @@ void savecurrentprofile(int num){
   EEPROM.commit();
   EEPROM.end();
 }
+
+
+int ramp(int profile,int pos){
+
+  int profileramp = 0;
+  
+  switch (pos) {
+    case 1:
+      profileramp = ((profile_param[(0+8*(profile-1))]-25)*100)/profile_param[(4+8*(profile-1))];
+      break;
+    case 2:
+      profileramp = ((profile_param[(1+8*(profile-1))]-profile_param[(0+8*(profile-1))])*100)/(profile_param[(5+8*(profile-1))]-profile_param[(4+8*(profile-1))]);
+      break;
+    case 3:
+      profileramp = ((profile_param[(2+8*(profile-1))]-profile_param[(1+8*(profile-1))])*100)/(profile_param[(6+8*(profile-1))]-profile_param[(5+8*(profile-1))]);
+      break;
+    case 4:
+      profileramp = ((profile_param[(3+8*(profile-1))]-profile_param[(2+8*(profile-1))])*100)/(profile_param[(7+8*(profile-1))]-profile_param[(6+8*(profile-1))]);
+      break;
+  }
+
+    return profileramp;
+    
+}
+
+int maxtempoint(int profile,int pos){
+
+  int returnvalue = 0;
+  
+  switch (pos) {
+    case 1:
+      returnvalue = profile_param[(0+8*(profile-1))];
+      break;
+    case 2:
+      returnvalue = profile_param[(1+8*(profile-1))];
+      break;
+    case 3:
+      returnvalue = profile_param[(2+8*(profile-1))];
+      break;
+    case 4:
+      returnvalue = profile_param[(3+8*(profile-1))];
+      break;
+  }
+
+    return returnvalue;
+    
+}
+
+
+int maxtime(int profile,int pos){
+
+  int returnvalue = 0;
+  
+  switch (pos) {
+    case 1:
+      returnvalue = profile_param[(4+8*(profile-1))]*1000;
+      break;
+    case 2:
+      returnvalue = (profile_param[(5+8*(profile-1))]-profile_param[(4+8*(profile-1))])*1000;
+      break;
+    case 3:
+      returnvalue = (profile_param[(6+8*(profile-1))]-profile_param[(5+8*(profile-1))])*1000;
+      break;
+    case 4:
+      returnvalue = (profile_param[(7+8*(profile-1))]-profile_param[(6+8*(profile-1))])*1000;
+      break;
+  }
+
+    return returnvalue;
+    
+}

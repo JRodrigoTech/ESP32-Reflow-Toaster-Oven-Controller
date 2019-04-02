@@ -1,7 +1,3 @@
-// Plot Data Arrays
-int plotdata[276];
-int plotleg=0;
-
 // WEB MAIN PAGE HEADER /w STYLE CSS //
 static const String header  = "<!DOCTYPE html><html><head>"
   "<title>Reflow Control Panel</title><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">"
@@ -46,7 +42,11 @@ static const String title = "<div style=\"background-color:#f1f1f1;padding:15px;
 String menu(int IP1, int IP2, int IP3, int IP4){
 
     String menu  = "<div style=\"overflow:auto\"><div class=\"menu\">"
-                    "<div class=\"menuitem\">Current Profile <select onchange=\"javascript:location.href = this.value;\"><option value=\"/set/1\"";
+                    "<div class=\"menuitem\">Current Profile <select onchange=\"javascript:location.href = this.value;\"";
+
+                    if(REFLOW_STATUS == true){ menu += " disabled"; }
+                    
+          menu  += "><option value=\"/set/1\"";
                     
                     if(current_profile == 1){ menu += " selected"; }
                     
@@ -68,9 +68,15 @@ String menu(int IP1, int IP2, int IP3, int IP4){
                     "</select></div>"
                     "<div class=\"menuitem\">Current Temp.: <span id=\"temp\">00,0 &deg;C</span></div>"
                     "<div class=\"menuitem\">Current IP:  "+String(IP1)+"."+String(IP2)+"."+String(IP3)+"."+String(IP4)+"</div>"
-                    "<div class=\"menuitem\"> </div>"
-                    "<div class=\"menuitem\"><input type=\"submit\" value=\"Start Reflow\"></div>"
-                    "<div class=\"menuitem\"> </div>"
+                    "<div class=\"menuitem\"> </div>";
+                    
+         if(REFLOW_STATUS == false){         
+          menu  += "<div class=\"menuitem\"><input type=\"submit\" value=\"Start Reflow\" onclick=\"window.location.href='/start'\"></div>";
+         } else {
+          menu  += "<div class=\"menuitem\"><input type=\"submit\" value=\"STOP Reflow\" onclick=\"window.location.href='/stop'\"></div>";
+         }
+                    
+          menu  += "<div class=\"menuitem\"> </div>"
                     "<div class=\"menuitem\"><a href=\"/settings/profile/1\">Settings</a></div>"
                     "</div>";
     
@@ -207,7 +213,11 @@ String profileset(int profilenum){
                        "<input type=\"text\" id=\"time4\" value=\"" +String(values[7])+ "\">"
 
 
-                       "<br><br><input type=\"submit\" value=\"Save\" onClick=\"saveprofile()\"></div></div></div>";
+                       "<br><br><input type=\"submit\" value=\"Save\" onClick=\"saveprofile()\"";
+                       
+              if(REFLOW_STATUS == true){ printhtml += " disabled"; }
+                       
+              printhtml += "></div></div></div>";
 
     return printhtml;
 }

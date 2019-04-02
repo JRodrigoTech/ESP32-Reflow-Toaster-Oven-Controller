@@ -5,37 +5,13 @@
 #include <EEPROM.h>
 #include <esp_task_wdt.h>
 #include "max6675.h"
+#include "Variables.h"
 #include "EEPROM_FUNCTIONS.h"
 #include "html.h"
 
-//int LED_BUILTIN = 14;
 
-// Dual Core Control loop on CORE 0
-TaskHandle_t  Tloop0;
-boolean       REFLOW_STATUS = false;      // Reflow process status (on/off)
 
-// Time Out for AP MODE
-const int     conn_time_out = 10000 ;     // in ms
-int           time_out = 0 ;
 
-// No delay variables
-unsigned long flagMillis;
-unsigned long currentMillis;
-const unsigned long period = 1000;  // in ms (delete)
-const unsigned long rflw_period = 500;  // in ms
-unsigned long plot_flag;  // in ms
-
-// Server Settings //
-const byte    DNS_PORT = 53;          // Capture DNS requests on port 53
-IPAddress     apIP(192, 168, 4, 1);    // Private network for server in AP MODE
-DNSServer     dnsServer;              // Create the DNS object
-WebServer     webServer(80);          // HTTP server
-boolean       AP_MODE = false;
-
-// MAX6675 Pins
-const int   thermoDO = 19;
-const int   thermoCS = 5;
-const int   thermoCLK = 18;
 
 MAX6675 thermocouple(thermoCLK, thermoCS, thermoDO); // Initialize library
 
@@ -232,6 +208,26 @@ void setup() {
     ESP.restart();
   });
 
+
+
+
+  // Start Reflow
+  webServer.on("/start", []() {
+    webServer.sendHeader("Location", "/");
+    webServer.send(302);  // Code 302 - Found - Resource requested has been temporarily moved to the URL given by the Location
+    REFLOW_STATUS = true;
+  });
+
+  // Stop Reflow
+  webServer.on("/stop", []() {
+    webServer.sendHeader("Location", "/");
+    webServer.send(302);  // Code 302 - Found - Resource requested has been temporarily moved to the URL given by the Location
+    REFLOW_STATUS = false;
+  });
+
+
+  
+
   // Replay to all not defined requests with same home HTML file
   webServer.onNotFound([]() {
     if(AP_MODE == true){
@@ -264,23 +260,137 @@ void loop0( void * pvParameters ){
         Serial.println(xPortGetCoreID());
  while(1){
 
+  currentMillis = millis();  
 
-      // Oven Controller
-      currentMillis = millis();  
-      if (currentMillis - flagMillis >= period)  
-      {
-        digitalWrite(17, !digitalRead(17)); 
-        flagMillis = currentMillis; 
+
+
+
+
+
+  if(REFLOW_STATUS == true){
+
+    if(prev_REFLOW_STATUS == false){   // Reflow initialized
+      temps_pos = 0;
+      temp_acqui = thermocouple.readCelsius();
+      prev_temp_acqui = temp_acqui;
+      Degsec = 0 ;
+      digitalWrite(17, HIGH);
+      reflow_pos = 1;
+      
+      reflow_wait = currentMillis;
+      plot_flag = currentMillis;
+      acquisition_flag = currentMillis;
+      control_flag = currentMillis;
+      PWM_flag = currentMillis;
+      prev_REFLOW_STATUS = true;
+    }
+
+
+    // Oven Temperature acquisition ( every 300 ms ) ( 10 x 2 sec )
+    if (currentMillis - acquisition_flag >= 300)  
+    {
+      if( temps_pos >= 10 ){
+        Degsec = ((temp_acqui - prev_temp_acqui)*100) / 3 ;
+        prev_temp_acqui = temp_acqui;
+        Serial.print("Deg per sec: ");
+        Serial.println(Degsec);
+        temps_pos = 0 ;
+      }
+      int tempstemp = thermocouple.readCelsius();
+      if( ( (temp_acqui-tempstemp) > -25) && ( (temp_acqui-tempstemp) < 25) ){
+           temp_acqui = (temp_acqui + tempstemp) / 2 ;
+      }
+      ++temps_pos;
+      acquisition_flag = currentMillis; 
+    }
+
+
+    // Oven PWM Power Controller  ( variable )
+    if(currentMillis - PWM_flag >= 1000){
+      
+      if(PWM_period > 20){
+        digitalWrite(17, HIGH);
+      }     
+
+      PWM_flag = currentMillis; 
+      
+    }else if(currentMillis - PWM_flag >= PWM_period){
+      
+      if(PWM_period < 980){
+        digitalWrite(17, LOW);
+      }
+    
+    }
+
+
+    // Oven Power Controller  ( every 1000 ms )
+    if (currentMillis - control_flag >= 1000)  
+    {
+
+        Serial.print("ramp: ");
+        Serial.println(ramp(current_profile,reflow_pos));
+          
+      PWM_period = PWM_period + ((ramp(current_profile,reflow_pos)-Degsec));
+
+        if ( PWM_period > 1000 ){PWM_period=1000;}
+        if ( PWM_period < 0 ){PWM_period=0;}
+
+      Serial.print("PWM_period: ");
+      Serial.println(PWM_period);
+
+
+
+
+
+
+      if( ramp(current_profile,reflow_pos) == 0 ){
+        
+          if (currentMillis - reflow_wait >= maxtime(current_profile,reflow_pos) ){
+              ++reflow_pos;
+              reflow_wait = currentMillis;
+          }
+          
+      }else{
+        if( maxtempoint(current_profile,reflow_pos) <= (temp_acqui+15) ){
+          ++reflow_pos;
+          reflow_wait = currentMillis;
+        }
       }
 
 
-      if ((currentMillis - plot_flag >= 5000)&& (plotleg < 138))  
-      {
-        plotdata[2*plotleg] = thermocouple.readCelsius();
-        plotdata[2*plotleg+1] = plotleg*2;
-        plotleg=plotleg+1;
-        plot_flag = currentMillis; 
-      }
+      if(reflow_pos >= 5){REFLOW_STATUS=false;}
+
+
+      control_flag = currentMillis; 
+    }
+
+
+    
+    // Oven Live Plot ( every 5000 ms )
+    if ((currentMillis - plot_flag >= 5000) && (plotleg < 138))  
+    { 
+      plotdata[2*plotleg] = temp_acqui;
+      plotdata[2*plotleg+1] = plotleg*5;
+      plotleg=plotleg+1;
+      plot_flag = currentMillis; 
+    }
+
+
+  }else{
+      digitalWrite(17, LOW);      // Disable Power
+      prev_REFLOW_STATUS = false;
+  }  // ENF IF REFLOW_STATUS
+  
+
+      
+
+
+
+
+
+
+
+
 
 
        vTaskDelay(10);   // Watchdog trigger fix
