@@ -6,12 +6,8 @@
 #include <esp_task_wdt.h>
 #include "max6675.h"
 #include "Variables.h"
-#include "EEPROM_FUNCTIONS.h"
+#include "EEPROM.h"
 #include "html.h"
-
-
-
-
 
 MAX6675 thermocouple(thermoCLK, thermoCS, thermoDO); // Initialize library
 
@@ -22,18 +18,11 @@ String thermocouple_temp() {
 
 void setup() {
   
-  Serial.begin(115200);   // SERIAL DEBUG
-
-  Serial.print("setup() running on core ");
-  Serial.println(xPortGetCoreID());
+  //Serial.begin(115200);   // SERIAL DEBUG
   
-                // turn the LED on (HIGH is the voltage level)
-                pinMode(17, OUTPUT);
-                digitalWrite(17, LOW);
-                
-                // turn the LED on (HIGH is the voltage level)
-                pinMode(LED_BUILTIN, OUTPUT);
-                digitalWrite(LED_BUILTIN, LOW);
+  // SSR POWER OUTPUT
+  pinMode(17, OUTPUT);
+  digitalWrite(17, LOW);
 
   // Pre-load EEPROM DATA
   loadEEPROMdata();
@@ -75,15 +64,8 @@ void setup() {
      
   }
 
-
-          digitalWrite(LED_BUILTIN, LOW);
-
   // WEB SERVER SOCKET REQUESTS //
-/*
-  webServer.on("/", []() {
-    webServer.send(200, "text/plain", "Hello World");
-  });
-*/  
+
   // Reflow Temperatures Array Data
   webServer.on("/reflowdata", []() {    
     webServer.send(200, "text/plain", profileplotprint() );
@@ -208,9 +190,6 @@ void setup() {
     ESP.restart();
   });
 
-
-
-
   // Start Reflow
   webServer.on("/start", []() {
     webServer.sendHeader("Location", "/");
@@ -224,9 +203,6 @@ void setup() {
     webServer.send(302);  // Code 302 - Found - Resource requested has been temporarily moved to the URL given by the Location
     REFLOW_STATUS = false;
   });
-
-
-  
 
   // Replay to all not defined requests with same home HTML file
   webServer.onNotFound([]() {
@@ -262,11 +238,6 @@ void loop0( void * pvParameters ){
 
   currentMillis = millis();  
 
-
-
-
-
-
   if(REFLOW_STATUS == true){
 
     if(prev_REFLOW_STATUS == false){   // Reflow initialized
@@ -292,8 +263,6 @@ void loop0( void * pvParameters ){
       if( temps_pos >= 10 ){
         Degsec = ((temp_acqui - prev_temp_acqui)*100) / 3 ;
         prev_temp_acqui = temp_acqui;
-        Serial.print("Deg per sec: ");
-        Serial.println(Degsec);
         temps_pos = 0 ;
       }
       int tempstemp = thermocouple.readCelsius();
@@ -326,22 +295,11 @@ void loop0( void * pvParameters ){
     // Oven Power Controller  ( every 1000 ms )
     if (currentMillis - control_flag >= 1000)  
     {
-
-        Serial.print("ramp: ");
-        Serial.println(ramp(current_profile,reflow_pos));
           
       PWM_period = PWM_period + ((ramp(current_profile,reflow_pos)-Degsec));
 
         if ( PWM_period > 1000 ){PWM_period=1000;}
         if ( PWM_period < 0 ){PWM_period=0;}
-
-      Serial.print("PWM_period: ");
-      Serial.println(PWM_period);
-
-
-
-
-
 
       if( ramp(current_profile,reflow_pos) == 0 ){
         
@@ -351,21 +309,18 @@ void loop0( void * pvParameters ){
           }
           
       }else{
+        
         if( maxtempoint(current_profile,reflow_pos) <= (temp_acqui+15) ){
           ++reflow_pos;
           reflow_wait = currentMillis;
         }
       }
-
-
       if(reflow_pos >= 5){REFLOW_STATUS=false;}
-
-
       control_flag = currentMillis; 
+      
     }
 
 
-    
     // Oven Live Plot ( every 5000 ms )
     if ((currentMillis - plot_flag >= 5000) && (plotleg < 138))  
     { 
@@ -375,24 +330,11 @@ void loop0( void * pvParameters ){
       plot_flag = currentMillis; 
     }
 
-
-  }else{
+  }else{  // REFLOW_STATUS != true
       digitalWrite(17, LOW);      // Disable Power
       prev_REFLOW_STATUS = false;
   }  // ENF IF REFLOW_STATUS
   
-
-      
-
-
-
-
-
-
-
-
-
-
        vTaskDelay(10);   // Watchdog trigger fix
  } // END while(1)
 } // END loop0()
