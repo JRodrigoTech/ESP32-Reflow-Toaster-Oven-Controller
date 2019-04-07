@@ -1,9 +1,17 @@
 // PIN DEFINITIONS //
+#define SSR_PIN 17
+#define STATUS_LED 33
+// SPI LCD PINS
+#define TFT_DC 27
+#define TFT_CS 26
+#define TFT_MOSI 23
+#define TFT_CLK 18
+#define TFT_RST 14
+#define TFT_MISO 19
 // MAX6675 Pins
-const int   thermoDO = 19;
-const int   thermoCS = 5;
-const int   thermoCLK = 18;
-
+#define thermoDO 19
+#define thermoCS 5
+#define thermoCLK 18
 
 // Time Out for AP MODE
 const int     conn_time_out = 10000 ;     // in ms
@@ -22,7 +30,6 @@ boolean       REFLOW_STATUS = false;      // Reflow process status (on/off)
 boolean       prev_REFLOW_STATUS = false;
 
 // No delay variables
-unsigned long flagMillis;
 unsigned long currentMillis;
 unsigned long control_flag;
 unsigned long acquisition_flag;
@@ -37,3 +44,8 @@ int temps_pos, temp_acqui, prev_temp_acqui, Degsec, reflow_pos;
 // Live Plot Data Arrays
 int plotdata[276];
 int plotleg=0;
+
+// LCD CUSTOM COLORS
+#define LIGHT_YELLOW 0xFFF0
+#define LIGHT_GRAY 0xDEFB
+#define DARK_RED 0x9800

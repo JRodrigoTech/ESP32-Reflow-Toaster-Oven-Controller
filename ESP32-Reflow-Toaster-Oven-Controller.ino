@@ -8,24 +8,76 @@
 #include "Variables.h"
 #include "EEPROM.h"
 #include "html.h"
+#include "SPI.h"
 
-MAX6675 thermocouple(thermoCLK, thermoCS, thermoDO); // Initialize library
+// Enable LCD + Touch Control (Comment to disable)
+#define LCD_TOUCH
 
-// Thermocouple Reading function
+// Serial Debug
+#define SERIAL_DEBUG
+
+// Initialize Termocouple
+MAX6675 thermocouple(thermoCLK, thermoCS, thermoDO);
+
+// Thermocouple String back function
 String thermocouple_temp() {
   return String(thermocouple.readCelsius());
 }
 
-void setup() {
-  
-  //Serial.begin(115200);   // SERIAL DEBUG
-  
-  // SSR POWER OUTPUT
-  pinMode(17, OUTPUT);
-  digitalWrite(17, LOW);
+#ifdef LCD_TOUCH
+  // LCD SCREEN
+  #include "Adafruit_GFX.h"
+  #include "Adafruit_ILI9341.h"
+  Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC, TFT_MOSI, TFT_CLK, TFT_RST, TFT_MISO);
+  #include "LCD.h" // LCD Print Functions
+  // MPR121 I2C Touch Controller
+  #include <Wire.h>
+  #include "Adafruit_MPR121.h"
+  #include "touch.h" // Touch Functions
+  Adafruit_MPR121 touch = Adafruit_MPR121(); 
+#endif
 
+void setup() {
+  #ifdef SERIAL_DEBUG
+	Serial.begin(115200);   // SERIAL DEBUG
+  #endif
   // Pre-load EEPROM DATA
   loadEEPROMdata();
+
+#ifdef LCD_TOUCH
+  // Start the LCD
+  tft.begin();
+  tft.setRotation(3);
+  tft.fillScreen(ILI9341_BLACK);
+  // Print welcome text during the start up
+  tft.setTextColor(ILI9341_BLUE);
+  tft.setTextSize(2);
+  tft.println("");
+  tft.println("  ESP32 Reflow Controler");
+  tft.setTextSize(1);
+  tft.println("");
+  tft.println("    ver.0.0.1b");
+  tft.setTextSize(3);
+  tft.println("");
+  tft.println("");
+  tft.setTextSize(1);
+  tft.setTextColor(ILI9341_GREEN);
+  tft.print("    Trying to connect to ");
+  tft.println(ssid);
+
+
+  // Initialize Touch Controller
+  touch.begin(0x5A);
+  
+#endif
+  
+  // SSR POWER OUTPUT
+  pinMode(SSR_PIN, OUTPUT);
+  digitalWrite(SSR_PIN, LOW);
+
+  // STATUS LED
+  pinMode(STATUS_LED, OUTPUT);
+  digitalWrite(STATUS_LED, HIGH);
 
   if(current_profile > 4 || current_profile < 1 ){ current_profile=1; }   // Profile Range Delimiter
 
@@ -34,7 +86,7 @@ void setup() {
 
   while (WiFi.status() != WL_CONNECTED && AP_MODE == false) {
       delay(500);
-      digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+      digitalWrite(STATUS_LED, !digitalRead(STATUS_LED));
       time_out = time_out + 500 ;
       if(time_out >= conn_time_out){
         AP_MODE = true;
@@ -63,6 +115,41 @@ void setup() {
     dnsServer.start(DNS_PORT, "*", apIP);
      
   }
+
+#ifdef LCD_TOUCH
+  if(AP_MODE == true){
+    tft.setTextSize(1);
+    tft.setTextColor(ILI9341_RED);
+    tft.println("");
+    tft.println("    Connection timeout!");
+    tft.println("    Creating an AP Wi-Fi access...");
+    tft.setTextColor(ILI9341_GREEN);
+    tft.println("");
+    tft.print("    IP: ");
+    tft.print(apIP[0]);tft.print(".");tft.print(apIP[1]);tft.print(".");tft.print(apIP[2]);tft.print(".");tft.println(apIP[3]);
+    tft.setTextSize(2);
+    tft.println("");
+    tft.println("");
+    tft.println("");
+    tft.println("");
+    tft.println(" Press any key to start...");
+  } else {
+    tft.setTextSize(1);
+    tft.setTextColor(ILI9341_GREEN);
+    tft.println("");
+    tft.println("    Connected !");
+    tft.println("");
+    tft.print("    IP: ");
+    tft.print(WiFi.localIP()[0]);tft.print(".");tft.print(WiFi.localIP()[1]);tft.print(".");tft.print(WiFi.localIP()[2]);tft.print(".");tft.println(WiFi.localIP()[3]);
+    tft.println("");
+    tft.setTextSize(2);
+    tft.println("");
+    tft.println("");
+    tft.println("");
+    tft.println("");
+    tft.println(" Press any key to start...");
+  }
+#endif
 
   // WEB SERVER SOCKET REQUESTS //
 
@@ -116,7 +203,6 @@ void setup() {
   webServer.on("/set/{}", []() {
     String Argument = webServer.pathArg(0);
     current_profile = Argument.toInt();
-    savecurrentprofile(current_profile);
     webServer.sendHeader("Location", "/");
     webServer.send(302);  // Code 302 - Found - Resource requested has been temporarily moved to the URL given by the Location
   });
@@ -194,6 +280,7 @@ void setup() {
   webServer.on("/start", []() {
     webServer.sendHeader("Location", "/");
     webServer.send(302);  // Code 302 - Found - Resource requested has been temporarily moved to the URL given by the Location
+    savecurrentprofile(current_profile);  // Save Current Profile
     REFLOW_STATUS = true;
   });
 
@@ -214,12 +301,12 @@ void setup() {
   });
   
   webServer.begin();      // Starts the previous defined Web Server Sockets
-
-  flagMillis = millis();  // Initial start time
-
+     
   // Starts the loop0() on CORE 0 (By default the main loop() is running on CORE 1)
   xTaskCreatePinnedToCore(loop0,"loop0",10000,NULL,1,&Tloop0,0);    /* pin task to core 0 */                    
-  
+
+  digitalWrite(STATUS_LED, HIGH);
+
 }
 
 // WEB SERVER // CORE 1 //
@@ -232,8 +319,6 @@ void loop() {
 
 // CONTROL // LCD // CORE 0 //
 void loop0( void * pvParameters ){
-        Serial.print("loop0 running on core ");
-        Serial.println(xPortGetCoreID());
  while(1){
 
   currentMillis = millis();  
@@ -245,7 +330,7 @@ void loop0( void * pvParameters ){
       temp_acqui = thermocouple.readCelsius();
       prev_temp_acqui = temp_acqui;
       Degsec = 0 ;
-      digitalWrite(17, HIGH);
+      digitalWrite(SSR_PIN, HIGH);
       reflow_pos = 1;
       
       reflow_wait = currentMillis;
@@ -278,7 +363,7 @@ void loop0( void * pvParameters ){
     if(currentMillis - PWM_flag >= 1000){
       
       if(PWM_period > 20){
-        digitalWrite(17, HIGH);
+        digitalWrite(SSR_PIN, HIGH);
       }     
 
       PWM_flag = currentMillis; 
@@ -286,7 +371,7 @@ void loop0( void * pvParameters ){
     }else if(currentMillis - PWM_flag >= PWM_period){
       
       if(PWM_period < 980){
-        digitalWrite(17, LOW);
+        digitalWrite(SSR_PIN, LOW);
       }
     
     }
@@ -331,10 +416,115 @@ void loop0( void * pvParameters ){
     }
 
   }else{  // REFLOW_STATUS != true
-      digitalWrite(17, LOW);      // Disable Power
+      digitalWrite(SSR_PIN, LOW);      // Disable Power
       prev_REFLOW_STATUS = false;
   }  // ENF IF REFLOW_STATUS
+
+#ifdef LCD_TOUCH
   
-       vTaskDelay(10);   // Watchdog trigger fix
+  // LCD INI
+  if(TouchRead == true && LCD_screen == 0){
+    LCDPrintProfiles(false);
+    prev_LCD_profile = current_profile; 
+    LCDPrintTemp(false,0);  
+    LCD_screen = 1 ;
+    LCD_temp_flag = currentMillis;
+  }
+
+  // Touch Read
+  if(currentMillis - touch_flag >= 250){
+
+      // Get the currently touched pads
+      currtouched = touch.touched();
+      
+      for (uint8_t i=0; i<12; i++) {
+        // it if *is* touched and *wasnt* touched before, alert!
+        if ((currtouched & _BV(i)) && !(lasttouched & _BV(i)) ) {
+         #ifdef SERIAL_DEBUG
+		  Serial.print(i); Serial.println(" touched");
+		 #endif
+
+          if(TouchRead == false && LCD_screen == 1 && REFLOW_STATUS == false){
+
+            if(i == 1){current_profile=current_profile-1;}  // [+] Button
+            if(i == 0){current_profile=current_profile+1;}  // [-] Button
+  
+            if(current_profile < 1){current_profile = 1;}
+            if(current_profile > 4){current_profile = 4;}
+
+          }
+          
+          // [Start] Button
+          if(LCD_screen == 1 && i == 4 && REFLOW_STATUS == false){
+            timeoutstart = currentMillis;
+          }
+          
+          // [Stop] Button
+          if(LCD_screen == 1 && i == 3 && REFLOW_STATUS == true){
+            timeoutstop = currentMillis;
+          }
+
+          TouchRead = true;          
+        }
+        // if it *was* touched and now *isnt*, alert!
+        if (!(currtouched & _BV(i)) && (lasttouched & _BV(i)) ) {
+         #ifdef SERIAL_DEBUG
+          Serial.print(i); Serial.println(" released");
+		 #endif
+          TouchRead = false;
+          timeoutstart = 0;
+          timeoutstop = 0;
+        }
+      }
+
+      if(prev_LCD_profile != current_profile && LCD_screen == 1 && REFLOW_STATUS == false){
+        LCDChangeProfiles(current_profile,prev_LCD_profile);
+      }
+      
+      prev_LCD_profile = current_profile;
+
+      // [Start] Hold Time Button
+      if((timeoutstart > 0) && (currentMillis - timeoutstart >= 2500)){
+          REFLOW_STATUS = true;
+          savecurrentprofile(current_profile);        
+      }
+      // [Stop] Hold Time Button
+      if((timeoutstop > 0) && (currentMillis - timeoutstop >= 2500)){
+          REFLOW_STATUS = false;        
+      }     
+
+      if(prev_RFLW != REFLOW_STATUS && LCD_screen == 1){
+        LCDReflowStatus(REFLOW_STATUS);
+      }
+      
+      prev_RFLW = REFLOW_STATUS;
+      
+      // reset our state
+      lasttouched = currtouched;
+
+      touch_flag = currentMillis; 
+  }
+  
+
+  // Termocoupler Read  
+  if((LCDtempread == true) && (LCD_screen == 1) && (currentMillis - LCD_temp_flag >= 750)){
+
+    temp_LCD = thermocouple.readCelsius();
+    if(temp_LCD > 1000){temp_LCD = -1;}
+    LCDtempread = false;
+  
+  // LCD Print bottom Temperature
+ }else if((LCD_screen == 1) && (currentMillis - LCD_temp_flag >= 1500)){
+    if(prev_temp_LCD != temp_LCD){
+      LCDPrintTemp(true,temp_LCD);
+    }
+    LCDtempread = true;
+    prev_temp_LCD = temp_LCD;
+    LCD_temp_flag = currentMillis; 
+  }// END LCD
+  
+#endif
+
+   vTaskDelay(10);   // Watchdog trigger fix
  } // END while(1)
 } // END loop0()
