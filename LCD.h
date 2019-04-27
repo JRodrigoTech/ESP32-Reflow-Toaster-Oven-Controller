@@ -5,6 +5,21 @@ boolean LCDtempread = false;
 boolean prev_RFLW = false;
 unsigned long LCD_temp_flag;
 
+// Touch Variables
+#ifndef _BV
+#define _BV(bit) (1 << (bit)) 
+#endif
+
+unsigned long touch_flag;
+unsigned long timeoutstart = 0;
+unsigned long timeoutstop = 0;
+boolean TouchRead = false ;
+
+// Keeps track of the last pins touched
+// so we know when buttons are 'released'
+uint16_t lasttouched = 0;
+uint16_t currtouched = 0;
+
 // TFT Print Profiles
 void LCDPrintProfiles(boolean initz) {
   if(initz == false){

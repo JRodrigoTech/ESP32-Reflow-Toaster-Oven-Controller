@@ -33,7 +33,6 @@ String thermocouple_temp() {
   // MPR121 I2C Touch Controller
   #include <Wire.h>
   #include "Adafruit_MPR121.h"
-  #include "touch.h" // Touch Functions
   Adafruit_MPR121 touch = Adafruit_MPR121(); 
 #endif
 
